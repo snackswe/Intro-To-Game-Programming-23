@@ -5,15 +5,20 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     // Global Variables:
+
     public float playerSpeed = 0.05f;
     public Rigidbody2D playerBody;
     public float jumpForce = 500;
     public bool isJumping = false;
+    public HealthBar healthBar;
+    public int maxHealth = 20;
+    public int currentHealth;
 
     // Start is called before the first frame update
     void Start()
     {
-        
+        currentHealth = maxHealth;
+        healthBar.SetMaxHealth(maxHealth);
     }
 
     // Update is called once per frame
@@ -52,5 +57,15 @@ public class PlayerController : MonoBehaviour
         {
             isJumping=false;
         }
+        if (collision.gameObject.tag == "Fire")
+        {
+            TakeDamage(5);
+        }
+    }
+    public void TakeDamage(int damage)
+    {
+        Debug.Log("TakeDamage() called. Damage = " + damage);
+        currentHealth -= damage;
+        healthBar.SetHealth(currentHealth);
     }
 }
