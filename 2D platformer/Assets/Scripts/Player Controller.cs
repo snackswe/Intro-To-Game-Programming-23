@@ -10,6 +10,8 @@ public class PlayerController : MonoBehaviour
     public Rigidbody2D playerBody;
     public float jumpForce = 500;
     public bool isJumping = false;
+
+    // Health Variables:
     public HealthBar healthBar;
     public int maxHealth = 20;
     public int currentHealth;
