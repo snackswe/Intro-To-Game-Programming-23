@@ -1,73 +1,102 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.SearchService;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
     // Global Variables:
 
-    public float playerSpeed = 0.05f;
+    public float playerSpeed = 1f;
     public Rigidbody2D playerBody;
-    public float jumpForce = 500;
-    public bool isJumping = false;
-
-    // Health Variables:
-    public HealthBar healthBar;
-    public int maxHealth = 20;
-    public int currentHealth;
+    public float jumpForce = 10;
+    public float drag = 1;
+    public Vector2 inertiaSpeed;
+    public SceneLogicHandler sceneMan;
+    private float horizontal;
+    public LayerMask groundLayer;
+    public BoxCollider2D groundCheck;
 
     // Start is called before the first frame update
     void Start()
     {
-        currentHealth = maxHealth;
-        healthBar.SetMaxHealth(maxHealth);
+        //groundCheck = GetComponent<BoxCollider2D>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        MovePlayer();
-        Jump();
+        if (!SceneLogicHandler.isPaused)
+        {
+            Jump();
+            horizontal = Input.GetAxisRaw("Horizontal");
+            if (inertiaSpeed.x > 0)
+            {
+                inertiaSpeed.x -= Time.deltaTime * drag;
+            } else
+            {
+                inertiaSpeed.x += Time.deltaTime * drag;
+            }
+            if ((inertiaSpeed.x < 0.4 && inertiaSpeed.x > 0) || (inertiaSpeed.x > -0.2 && inertiaSpeed.x < 0))
+            {
+                inertiaSpeed.x = (int)Math.Round(inertiaSpeed.x);
+            }
+            if (GetGroundObject() != null && GetGroundObject().tag == "Road")
+            {
+                sceneMan.YouDied();
+                Debug.Log("road");
+            }
+        }    
     }
-    private void MovePlayer()
+    private void FixedUpdate()
     {
-        Vector3 newPos = transform.position;
-        if (Input.GetKey(KeyCode.A))
+        playerBody.velocity = new Vector2(horizontal * playerSpeed, playerBody.velocity.y);
+        if (GetGroundObject() != null)
         {
-            //Debug.Log("A");
-            newPos.x -= playerSpeed;
-        } 
-        else if (Input.GetKey(KeyCode.D))
-        {
-            //Debug.Log("D");
-            newPos.x += playerSpeed;
+            if (GetGroundObject().GetComponent<Rigidbody2D>() != null)
+            {
+                inertiaSpeed.x = GetGroundObject().GetComponent<Rigidbody2D>().velocity.x;
+                playerBody.velocity += inertiaSpeed;
+            }
         }
-        transform.position = newPos;
+        else
+        {
+            playerBody.velocity += inertiaSpeed;
+        }
+    }
+    private GameObject GetGroundObject()
+    {
+        
+        Collider2D hit = Physics2D.OverlapBox(groundCheck.bounds.center, groundCheck.bounds.size, 0f, groundLayer);
+        if (hit != null)
+        {
+            return hit.gameObject;   
+        }
+        return null;
+    }
+    private bool IsGrounded()
+    {
+        if (GetGroundObject() != null)
+        {
+            return true;
+        }
+        return false;
     }
     private void Jump()
     {
-        if (Input.GetKeyDown(KeyCode.Space) && !isJumping)
+        if (Input.GetButtonDown("Jump"))
         {
-            //Debug.Log("Jump");
-            playerBody.AddForce(new Vector3(playerBody.velocity.x, jumpForce, 0));
-            isJumping = true;
+            if (GetGroundObject() != null && GetGroundObject().tag == "Ground")
+            {
+                playerBody.velocity = new Vector2(playerBody.velocity.x, jumpForce);
+            }
         }
-    }
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (collision.gameObject.tag == "Ground")
+
+        if (Input.GetButtonUp("Jump") && playerBody.velocity.y > 0f)
         {
-            isJumping=false;
+            playerBody.velocity = new Vector2(playerBody.velocity.x, playerBody.velocity.y * 0.2f);
         }
-        if (collision.gameObject.tag == "Fire")
-        {
-            TakeDamage(5);
-        }
-    }
-    public void TakeDamage(int damage)
-    {
-        Debug.Log("TakeDamage() called. Damage = " + damage);
-        currentHealth -= damage;
-        healthBar.SetHealth(currentHealth);
     }
 }
+    
