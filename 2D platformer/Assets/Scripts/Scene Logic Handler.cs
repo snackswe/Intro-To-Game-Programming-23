@@ -8,8 +8,11 @@ public class SceneLogicHandler : MonoBehaviour
     // Global Variables:
     public static bool deathScreenUp = false;
     public static bool isPaused = false;
+    bool endScreenUp;
+    public static int score;
     public GameObject deathScreen;
     public GameObject pauseScreen;
+    public GameObject endScreen;
 
     // Start is called before the first frame update
     void Start()
@@ -35,15 +38,21 @@ public class SceneLogicHandler : MonoBehaviour
         }
         if (deathScreenUp)
         {
-            if (Input.GetKeyDown (KeyCode.Space))
+            DeathScreen();
+        }
+        else if (endScreenUp)
+        {
+            if (Input.GetKeyDown(KeyCode.Return))
             {
-                string currentSceneName = SceneManager.GetActiveScene().name;
-                SceneManager.LoadScene(currentSceneName);
-                deathScreenUp = false;
-                isPaused = false;
-                Time.timeScale = 1.0f;
+                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
             }
         }
+    }
+    public void EndScreen()
+    {
+        Time.timeScale = 0f;
+        endScreen.SetActive(true);
+        endScreenUp = false;
     }
     public void PauseGame()
     {
@@ -63,5 +72,16 @@ public class SceneLogicHandler : MonoBehaviour
         Time.timeScale = 0f;
         deathScreenUp = true;
         deathScreen.SetActive(true);
+    }
+    public void DeathScreen()
+    {
+        if (Input.GetKeyDown (KeyCode.Space))
+        {
+            string currentSceneName = SceneManager.GetActiveScene().name;
+            SceneManager.LoadScene(currentSceneName);
+            deathScreenUp = false;
+            isPaused = false;
+            Time.timeScale = 1.0f;
+        }
     }
 }
