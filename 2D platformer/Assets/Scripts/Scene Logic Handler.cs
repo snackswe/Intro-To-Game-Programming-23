@@ -6,8 +6,8 @@ using UnityEngine.SceneManagement;
 public class SceneLogicHandler : MonoBehaviour
 {
     // Global Variables:
-    public static bool deathScreenUp = false;
-    public static bool isPaused = false;
+    public static bool deathScreenUp;
+    public static bool isPaused;
     bool endScreenUp;
     public static int score;
     public GameObject deathScreen;
@@ -19,6 +19,11 @@ public class SceneLogicHandler : MonoBehaviour
     {
         pauseScreen.SetActive(false);
         deathScreen.SetActive(false);
+        endScreen.SetActive(false);
+        isPaused = false;
+        deathScreenUp = false;
+        endScreenUp = false;
+        Time.timeScale = 1;
     }
 
     // Update is called once per frame
@@ -45,6 +50,10 @@ public class SceneLogicHandler : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.Return))
             {
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+            }
+            if (Input.GetKeyDown(KeyCode.Backspace))
+            {
+                SceneManager.LoadScene("CT main menu");
             }
         }
     }
@@ -77,11 +86,11 @@ public class SceneLogicHandler : MonoBehaviour
     {
         if (Input.GetKeyDown (KeyCode.Space))
         {
+            isPaused = true;
             string currentSceneName = SceneManager.GetActiveScene().name;
-            SceneManager.LoadScene(currentSceneName);
             deathScreenUp = false;
-            isPaused = false;
             Time.timeScale = 1.0f;
+            SceneManager.LoadScene(currentSceneName);
         }
     }
 }

@@ -17,6 +17,10 @@ public class PlayerController : MonoBehaviour
     private float horizontal;
     public LayerMask groundLayer;
     public BoxCollider2D groundCheck;
+    public BoxCollider2D hurtBox;
+    public float scoreMultiplier;
+    public int score;
+    float airtime;
 
     // Start is called before the first frame update
     void Start()
@@ -31,9 +35,14 @@ public class PlayerController : MonoBehaviour
         {
             Jump();
             horizontal = Input.GetAxisRaw("Horizontal");
-            if (inertiaSpeed.x > 0)
+            if (inertiaSpeed.x > 0 && GetTriggerObject(groundCheck) == null)
             {
                 inertiaSpeed.x -= Time.deltaTime * drag;
+                airtime += Time.deltaTime;
+                if (airtime > 0.7f)
+                {
+                    score += Mathf.RoundToInt(Time.deltaTime *(playerBody.velocity.x + playerBody.velocity.y) * scoreMultiplier);
+                }
             } else
             {
                 inertiaSpeed.x += Time.deltaTime * drag;
@@ -42,9 +51,11 @@ public class PlayerController : MonoBehaviour
             {
                 inertiaSpeed.x = (int)Math.Round(inertiaSpeed.x);
             }
-            if (GetGroundObject() != null && GetGroundObject().tag == "Road")
+            if (GetTriggerObject(hurtBox) != null && GetTriggerObject(hurtBox).tag == "Road")
             {
                 sceneMan.YouDied();
+                score = 0;
+                airtime = 0;
                 Debug.Log("road");
             }
         }    
@@ -52,12 +63,13 @@ public class PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
         playerBody.velocity = new Vector2(horizontal * playerSpeed, playerBody.velocity.y);
-        if (GetGroundObject() != null)
+        if (GetTriggerObject(groundCheck) != null)
         {
-            if (GetGroundObject().GetComponent<Rigidbody2D>() != null)
+            if (GetTriggerObject(groundCheck).GetComponent<Rigidbody2D>() != null)
             {
-                inertiaSpeed.x = GetGroundObject().GetComponent<Rigidbody2D>().velocity.x;
+                inertiaSpeed.x = GetTriggerObject(groundCheck).GetComponent<Rigidbody2D>().velocity.x;
                 playerBody.velocity += inertiaSpeed;
+                airtime = 0;
             }
         }
         else
@@ -65,10 +77,9 @@ public class PlayerController : MonoBehaviour
             playerBody.velocity += inertiaSpeed;
         }
     }
-    private GameObject GetGroundObject()
+    private GameObject GetTriggerObject(Collider2D box)
     {
-        
-        Collider2D hit = Physics2D.OverlapBox(groundCheck.bounds.center, groundCheck.bounds.size, 0f, groundLayer);
+        Collider2D hit = Physics2D.OverlapBox(box.bounds.center, box.bounds.size, 0f, groundLayer);
         if (hit != null)
         {
             return hit.gameObject;   
@@ -77,7 +88,7 @@ public class PlayerController : MonoBehaviour
     }
     private bool IsGrounded()
     {
-        if (GetGroundObject() != null)
+        if (GetTriggerObject(groundCheck) != null)
         {
             return true;
         }
@@ -87,7 +98,7 @@ public class PlayerController : MonoBehaviour
     {
         if (Input.GetButtonDown("Jump"))
         {
-            if (GetGroundObject() != null && GetGroundObject().tag == "Ground")
+            if (GetTriggerObject(groundCheck) != null && GetTriggerObject(groundCheck).tag == "Ground")
             {
                 playerBody.velocity = new Vector2(playerBody.velocity.x, jumpForce);
             }
