@@ -3,6 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor.SearchService;
 using UnityEngine;
+using UnityEngine.UIElements;
+using UnityEngine.UI;
+using TMPro;
 
 public class PlayerController : MonoBehaviour
 {
@@ -18,14 +21,17 @@ public class PlayerController : MonoBehaviour
     public LayerMask groundLayer;
     public BoxCollider2D groundCheck;
     public BoxCollider2D hurtBox;
+    public TextMeshProUGUI airBonusText;
+    public Animator animator;
+    public UnityEngine.UI.Slider AirMeter;
     public float scoreMultiplier;
-    public int score;
+    public static int score;
+    private bool isFacingRight = true;
     float airtime;
 
     // Start is called before the first frame update
     void Start()
     {
-        //groundCheck = GetComponent<BoxCollider2D>();
     }
 
     // Update is called once per frame
@@ -33,23 +39,55 @@ public class PlayerController : MonoBehaviour
     {
         if (!SceneLogicHandler.isPaused)
         {
+            Flip();
+            Jump();
+            if (airtime > 1.5f && airtime > AirMeter.value)
+            {
+                AirMeter.value += Time.deltaTime;
+            }
+            if (AirMeter.value > airtime)
+            {
+                AirMeter.value -= Time.deltaTime * 0.5f;
+            }
+            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D))
+            {
+                animator.SetBool("Running", true);
+            }else
+            {
+                animator.SetBool("Running", false);
+            }
+        }
+
+    }
+
+    private void FixedUpdate()
+    {
+        if (!SceneLogicHandler.isPaused)
+        {
             Jump();
             horizontal = Input.GetAxisRaw("Horizontal");
-            if (inertiaSpeed.x > 0 && GetTriggerObject(groundCheck) == null)
+            if ((inertiaSpeed.x > 0 || inertiaSpeed.x < 0) && GetTriggerObject(groundCheck) == null)
             {
-                inertiaSpeed.x -= Time.deltaTime * drag;
                 airtime += Time.deltaTime;
-                if (airtime > 0.7f)
+                animator.SetBool("Grounded", false);
+
+                if (inertiaSpeed.x > 0)
                 {
-                    score += Mathf.RoundToInt(Time.deltaTime *(playerBody.velocity.x + playerBody.velocity.y) * scoreMultiplier);
+                    inertiaSpeed.x -= Time.deltaTime * drag;
+                } else
+                {
+                    inertiaSpeed.x += Time.deltaTime * drag;
                 }
-            } else
-            {
-                inertiaSpeed.x += Time.deltaTime * drag;
-            }
-            if ((inertiaSpeed.x < 0.4 && inertiaSpeed.x > 0) || (inertiaSpeed.x > -0.2 && inertiaSpeed.x < 0))
-            {
-                inertiaSpeed.x = (int)Math.Round(inertiaSpeed.x);
+                if (airtime > 1.5f)
+                {
+                    float airBonus = airtime + scoreMultiplier;
+                    score += Mathf.RoundToInt(Time.deltaTime * playerBody.velocity.x * airBonus);
+                    airBonusText.text = "x " + airtime.ToString("F2");
+                }
+                if (airtime > 4)
+                {
+                    airtime = 4;
+                }
             }
             if (GetTriggerObject(hurtBox) != null && GetTriggerObject(hurtBox).tag == "Road")
             {
@@ -58,24 +96,24 @@ public class PlayerController : MonoBehaviour
                 airtime = 0;
                 Debug.Log("road");
             }
-        }    
-    }
-    private void FixedUpdate()
-    {
-        playerBody.velocity = new Vector2(horizontal * playerSpeed, playerBody.velocity.y);
-        if (GetTriggerObject(groundCheck) != null)
-        {
-            if (GetTriggerObject(groundCheck).GetComponent<Rigidbody2D>() != null)
+            playerBody.velocity = new Vector2(horizontal * playerSpeed, playerBody.velocity.y);
+
+            if (GetTriggerObject(groundCheck) != null)
             {
-                inertiaSpeed.x = GetTriggerObject(groundCheck).GetComponent<Rigidbody2D>().velocity.x;
-                playerBody.velocity += inertiaSpeed;
-                airtime = 0;
+                animator.SetBool("Grounded", true);
+                if (GetTriggerObject(groundCheck).GetComponent<Rigidbody2D>() != null)
+                {
+                    inertiaSpeed.x = GetTriggerObject(groundCheck).GetComponent<Rigidbody2D>().velocity.x;
+                    playerBody.velocity += inertiaSpeed;
+                    airtime = 0;
+                    airBonusText.text = "";
+                }
             }
-        }
-        else
-        {
-            playerBody.velocity += inertiaSpeed;
-        }
+            else
+            {
+                playerBody.velocity += inertiaSpeed;
+            }  
+        }    
     }
     private GameObject GetTriggerObject(Collider2D box)
     {
@@ -107,6 +145,17 @@ public class PlayerController : MonoBehaviour
         if (Input.GetButtonUp("Jump") && playerBody.velocity.y > 0f)
         {
             playerBody.velocity = new Vector2(playerBody.velocity.x, playerBody.velocity.y * 0.2f);
+        }
+    }
+    private void Flip()
+    {
+        if (isFacingRight && horizontal < 0f || !isFacingRight && horizontal > 0f)
+        {
+            isFacingRight = !isFacingRight;
+            Vector3 localScale = transform.localScale;
+            transform.localScale = localScale;
+            localScale.x *= -1f;
+            transform.localScale = localScale;
         }
     }
 }

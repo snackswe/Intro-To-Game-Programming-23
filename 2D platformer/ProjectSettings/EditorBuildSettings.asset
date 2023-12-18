@@ -14,4 +14,10 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/CT Level 1.unity
     guid: 7d7f0d7278373f347ae0dacc17d6c0f7
+  - enabled: 1
+    path: Assets/Scenes/CT End.unity
+    guid: 5e0aa048da1a0b04eaa79362e993b21a
+  - enabled: 1
+    path: Assets/Scenes/CT main menu.unity
+    guid: f7df65431286cde48ab056d59201a93c
   m_configObjects: {}
